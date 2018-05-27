@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import Alamofire
+import AlamofireImage
 
 class ViewController: UIViewController {
 
@@ -15,46 +17,46 @@ class ViewController: UIViewController {
             tableView.reloadData()
         }
     }
+    var userService = UserService()
     
-    var imageCache = NSCache<NSString, UIImage>() {
-        didSet {
-            tableView.reloadData()
-        }
-    }
     let userLoginCellIdentifier = "userLogin"
     let userDetailsViewIdentifier = "UserDetails"
+    
+    let manager = NetworkReachabilityManager(host: "www.apple.com")
+    
+    
     
     @IBOutlet weak var tableView: UITableView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        let url = URL(string: "https://api.github.com/users")
-        let urlRequest = URLRequest(url: url!)
-        let task = URLSession.shared.dataTask(with: urlRequest) { [weak self] (data, response, error) in
-            
-            if let error = error {
-                self?.handleError(error)
-            }
-            if let data = data {
-                self?.extractJsonFromData(data)
-            }
-        }
-        task.resume()
         tableView.delegate = self
         tableView.dataSource = self
+        userService.delegate = self
         tableView.register(UINib(nibName: "UserListTableViewCell", bundle: Bundle.main), forCellReuseIdentifier: userLoginCellIdentifier)
-//        tableView.register(UINib(nibName: "UserDetailsViewController", bundle: Bundle.main), forCellReuseIdentifier: userDetailsViewIdentifier)
-        
-        
-//        tableView.rowHeight = UITableViewAutomaticDimension
-//        tableView.estimatedRowHeight = 120
+
     }
     
-//    override func viewDidAppear(_ animated: Bool) {
-//    super.viewDidAppear(animated)
-//        tableView.reloadData()
-//    }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        manageConnectionStatusChanges()
+        userService.getDataFromUrl()
+    }
+    
+    private func manageConnectionStatusChanges() {
+        manager?.listener = { [weak self] status in
+            switch status {
+            case .notReachable, .unknown:
+                self?.presentConnectivityAlert(of: status)
+            default: return
+            }
+        }
+    }
+    
+    private func presentConnectivityAlert(of status: NetworkReachabilityManager.NetworkReachabilityStatus) {
+        
+    }
+    
     
     fileprivate func handleError(_ error: Error) {
         let alert = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
@@ -62,57 +64,14 @@ class ViewController: UIViewController {
         self.present(alert, animated: true, completion: nil)
     }
     
-    fileprivate func extractJsonFromData(_ data: Data) {
-        if let json = try? JSONSerialization.jsonObject(with: data, options: []) {
-            if let jsonAsArrayOfAny = json as? Array<Any> {
-                var arrayOfUsers = [User]()
-                for user in jsonAsArrayOfAny {
-                    if let userAsDict = user as? Json {
-                        let user = User(with: userAsDict)
-                            arrayOfUsers.append(user)
-                    }
-                }
-                DispatchQueue.main.async {
-                    self.arrayOfUsers = arrayOfUsers
-                }
-            }
-        }
-    }
-    
-    fileprivate func fetchImage(from urlString: String, completion: @escaping ((UIImage) -> Void)) {
-        if let url = URL(string: urlString) {
-            if let cachedImage = imageCache.object(forKey: url.absoluteString as NSString) {
-                completion(cachedImage)
-            } else {
-                let request = URLRequest(url: url)
-                let task = URLSession.shared.dataTask(with: request) { [weak self] (data, response, error) in
-                    if let error = error {
-                        self?.handleError(error)
-                    }
-                    if let data = data, let image = UIImage(data: data) {
-                        self?.imageCache.setObject(image, forKey: url.absoluteString as NSString)
-                        DispatchQueue.main.async {
-                            completion(image)
-                        }
-                    }
-                }
-                task.resume()
-            }
-        }
-    }
-    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if  segue.identifier == userDetailsViewIdentifier {
+        if segue.identifier == userDetailsViewIdentifier {
             let userDetailsVC = segue.destination as! UserDetailsViewController
             if let indexPath = sender as? IndexPath {
                 userDetailsVC.user = arrayOfUsers[indexPath.row]
             }
         }
     }
-    
-    
-    
-
 }
 
 extension ViewController: UITableViewDataSource {
@@ -125,25 +84,26 @@ extension ViewController: UITableViewDataSource {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: userLoginCellIdentifier) as? UserListTableViewCell else { return UITableViewCell() }
         let user = arrayOfUsers[indexPath.row]
         cell.userLoginLabel.text = user.login
-        //cell.urlLabel.text = user.htmlUrl
-        fetchImage(from: user.avatarUrl) { image in
-            let avatarImage = cell.avatarImage
-                avatarImage?.image = image
-        }
-        tableView.rowHeight = 60
+        cell.avatarImage.af_setImage(withURL: URL(string: user.avatarUrl)!, placeholderImage: #imageLiteral(resourceName: "placeholder"))
         return cell
     }
-    
-//    func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
-//    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.performSegue(withIdentifier: userDetailsViewIdentifier, sender: indexPath)
-
-    }
-    
 }
 
 extension ViewController: UITableViewDelegate {
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        self.performSegue(withIdentifier: userDetailsViewIdentifier, sender: indexPath)
+    }
+}
+
+extension ViewController: UserServiceDelegate {
+    func userService(_ userService: UserService, didRetrieveData userData: [User]) {
+        arrayOfUsers = userData
+    }
+    
+    func userService(_ userService: UserService, didFailWithError error: Error) {
+        handleError(error)
+    }
+    
     
 }

@@ -8,9 +8,9 @@
 
 import Foundation
 
-struct User {
+struct User: Codable {
     
-    var avatarUrl: String
+    let avatarUrl: String
     let htmlUrl: String
     let id: Int
     let login: String
@@ -24,4 +24,14 @@ struct User {
         type = json["type"] as! String
     }
     
+    enum CodingKeys: String, CodingKey {
+        case avatarUrl = "avatar_url"
+        case htmlUrl = "html_url"
+        case id
+        case login
+        case type
+    }
+    
 }
+
+

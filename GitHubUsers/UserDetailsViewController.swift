@@ -15,18 +15,12 @@ class UserDetailsViewController: UIViewController {
             userUrl?.text = user?.htmlUrl
         }
     }
-
     
     @IBOutlet weak var userUrl: UILabel!
-    
-    let userDetailsViewIdentifier = "UserDetails"
     
     override func viewDidLoad() {
         super.viewDidLoad()
         userUrl?.text = user?.htmlUrl
-
-
-        
     }
     
     
