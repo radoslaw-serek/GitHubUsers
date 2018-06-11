@@ -10,20 +10,46 @@ import UIKit
 import Alamofire
 import AlamofireImage
 
+let userLoginCellIdentifier = "userLogin"
+
 class ViewController: UIViewController {
 
-    var arrayOfUsers = [User]() {
-        didSet {
-            tableView.reloadData()
+
+//    private enum dataSource {
+//        case grouping (GroupingTableViewDataSource) = 
+//        case nonGrouping (NonGroupingTableViewDataSource)
+//    }
+    
+    private var groupingTableViewDataSource: GroupingTableViewDataSource?
+
+    private var nonGroupingTableViewDataSource: NonGroupingTableViewDataSource?
+    
+    private var userService = UserService()
+    
+    private let userDetailsViewIdentifier = "UserDetails"
+    
+    private let manager = NetworkReachabilityManager(host: "www.apple.com")
+    
+    private var isGroupingModeOn = false
+    
+    private func setTableViewMode() {
+        if isGroupingModeOn {
+            groupingTableViewDataSource = GroupingTableViewDataSource()
+            nonGroupingTableViewDataSource = nil
+            tableView.dataSource = groupingTableViewDataSource
+        } else {
+            groupingTableViewDataSource = nil
+            nonGroupingTableViewDataSource = NonGroupingTableViewDataSource()
+            tableView.dataSource = nonGroupingTableViewDataSource
         }
     }
-    var userService = UserService()
     
-    let userLoginCellIdentifier = "userLogin"
-    let userDetailsViewIdentifier = "UserDetails"
-    
-    let manager = NetworkReachabilityManager(host: "www.apple.com")
-    
+    @IBAction func changeTableViewMode(_ sender: UIBarButtonItem) {
+        isGroupingModeOn = !isGroupingModeOn
+        userService.getDataFromUrl()
+        setTableViewMode()
+        tableView.reloadData()
+    }
     
     
     @IBOutlet weak var tableView: UITableView!
@@ -31,7 +57,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.delegate = self
-        tableView.dataSource = self
+        setTableViewMode()
         userService.delegate = self
         tableView.register(UINib(nibName: "UserListTableViewCell", bundle: Bundle.main), forCellReuseIdentifier: userLoginCellIdentifier)
 
@@ -54,7 +80,13 @@ class ViewController: UIViewController {
     }
     
     private func presentConnectivityAlert(of status: NetworkReachabilityManager.NetworkReachabilityStatus) {
-        
+        let size = CGRect(x: 0, y: 0, width: view.frame.size.width, height: 30)
+        let label = UILabel(frame: size)
+        label.text = "Connectivity issue. Status: \(status). Please check."
+        label.textAlignment = .center
+        label.textColor = UIColor.white
+        label.backgroundColor = UIColor.red
+        self.view.addSubview(label)
     }
     
     
@@ -68,26 +100,17 @@ class ViewController: UIViewController {
         if segue.identifier == userDetailsViewIdentifier {
             let userDetailsVC = segue.destination as! UserDetailsViewController
             if let indexPath = sender as? IndexPath {
-                userDetailsVC.user = arrayOfUsers[indexPath.row]
+                if isGroupingModeOn, let key = groupingTableViewDataSource?.arrayOfKeys[indexPath.section] {
+                    userDetailsVC.user = groupingTableViewDataSource?.dictOfUsers[key]![indexPath.row]
+                } else {
+                    userDetailsVC.user = nonGroupingTableViewDataSource?.arrayOfUsers[indexPath.row]
+                }
             }
         }
     }
 }
 
-extension ViewController: UITableViewDataSource {
-    
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return arrayOfUsers.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: userLoginCellIdentifier) as? UserListTableViewCell else { return UITableViewCell() }
-        let user = arrayOfUsers[indexPath.row]
-        cell.userLoginLabel.text = user.login
-        cell.avatarImage.af_setImage(withURL: URL(string: user.avatarUrl)!, placeholderImage: #imageLiteral(resourceName: "placeholder"))
-        return cell
-    }
-}
+
 
 extension ViewController: UITableViewDelegate {
     
@@ -98,7 +121,12 @@ extension ViewController: UITableViewDelegate {
 
 extension ViewController: UserServiceDelegate {
     func userService(_ userService: UserService, didRetrieveData userData: [User]) {
-        arrayOfUsers = userData
+        if isGroupingModeOn {
+            groupingTableViewDataSource?.arrayOfUsers = userData
+        } else {
+            nonGroupingTableViewDataSource?.arrayOfUsers = userData
+        }
+        tableView.reloadData()
     }
     
     func userService(_ userService: UserService, didFailWithError error: Error) {
