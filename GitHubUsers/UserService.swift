@@ -40,8 +40,6 @@ class UserService {
                     DispatchQueue.main.async {
                         self?.delegate?.userService(self!, didRetrieveData: arrayOfUsers)
                     }
-                    //                self?.delegate?.userService(self!, didFailWithError: error)
-                    //                self.delegate?.userService(self, didRetrieveData: self?.userPersistence.getUsers())
                 } else {
                     DispatchQueue.main.async {
                         self?.delegate?.userService(self!, didFailWithError: error)

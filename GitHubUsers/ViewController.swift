@@ -15,14 +15,7 @@ let userLoginCellIdentifier = "userLogin"
 class ViewController: UIViewController {
 
 
-//    private enum dataSource {
-//        case grouping (GroupingTableViewDataSource) = 
-//        case nonGrouping (NonGroupingTableViewDataSource)
-//    }
-    
-    private var groupingTableViewDataSource: GroupingTableViewDataSource?
-
-    private var nonGroupingTableViewDataSource: NonGroupingTableViewDataSource?
+    private var userListDataSource: UserListDataSource = GroupingTableViewDataSource()
     
     private var userService = UserService()
     
@@ -30,37 +23,28 @@ class ViewController: UIViewController {
     
     private let manager = NetworkReachabilityManager(host: "www.apple.com")
     
-    private var isGroupingModeOn = false
-    
-    private func setTableViewMode() {
-        if isGroupingModeOn {
-            groupingTableViewDataSource = GroupingTableViewDataSource()
-            nonGroupingTableViewDataSource = nil
-            tableView.dataSource = groupingTableViewDataSource
-        } else {
-            groupingTableViewDataSource = nil
-            nonGroupingTableViewDataSource = NonGroupingTableViewDataSource()
-            tableView.dataSource = nonGroupingTableViewDataSource
+    private var isGroupingModeOn = true {
+        didSet {
+            userListDataSource = isGroupingModeOn ? GroupingTableViewDataSource() : NonGroupingTableViewDataSource()
         }
     }
     
     @IBAction func changeTableViewMode(_ sender: UIBarButtonItem) {
+        let tempArrayOfUsers = userListDataSource.arrayOfUsers
         isGroupingModeOn = !isGroupingModeOn
-        userService.getDataFromUrl()
-        setTableViewMode()
+        userListDataSource.arrayOfUsers = tempArrayOfUsers
+        tableView.dataSource = userListDataSource
         tableView.reloadData()
     }
-    
     
     @IBOutlet weak var tableView: UITableView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.delegate = self
-        setTableViewMode()
+        tableView.dataSource = userListDataSource
         userService.delegate = self
         tableView.register(UINib(nibName: "UserListTableViewCell", bundle: Bundle.main), forCellReuseIdentifier: userLoginCellIdentifier)
-
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -89,7 +73,6 @@ class ViewController: UIViewController {
         self.view.addSubview(label)
     }
     
-    
     fileprivate func handleError(_ error: Error) {
         let alert = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
         alert.addAction(UIAlertAction.init(title: "OK", style: UIAlertActionStyle.default, handler: nil))
@@ -100,17 +83,13 @@ class ViewController: UIViewController {
         if segue.identifier == userDetailsViewIdentifier {
             let userDetailsVC = segue.destination as! UserDetailsViewController
             if let indexPath = sender as? IndexPath {
-                if isGroupingModeOn, let key = groupingTableViewDataSource?.arrayOfKeys[indexPath.section] {
-                    userDetailsVC.user = groupingTableViewDataSource?.dictOfUsers[key]![indexPath.row]
-                } else {
-                    userDetailsVC.user = nonGroupingTableViewDataSource?.arrayOfUsers[indexPath.row]
+                if isGroupingModeOn {
+                    userDetailsVC.user = userListDataSource.retrieveUser(with: indexPath)
                 }
             }
         }
     }
 }
-
-
 
 extension ViewController: UITableViewDelegate {
     
@@ -121,17 +100,11 @@ extension ViewController: UITableViewDelegate {
 
 extension ViewController: UserServiceDelegate {
     func userService(_ userService: UserService, didRetrieveData userData: [User]) {
-        if isGroupingModeOn {
-            groupingTableViewDataSource?.arrayOfUsers = userData
-        } else {
-            nonGroupingTableViewDataSource?.arrayOfUsers = userData
-        }
+        userListDataSource.arrayOfUsers = userData
         tableView.reloadData()
     }
     
     func userService(_ userService: UserService, didFailWithError error: Error) {
         handleError(error)
     }
-    
-    
 }
