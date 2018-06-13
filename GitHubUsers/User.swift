@@ -16,14 +16,6 @@ struct User: Codable {
     let login: String
     let type: String
     
-    init(with json: Json) {
-        avatarUrl = json["avatar_url"] as! String
-        htmlUrl = json["html_url"] as! String
-        id = json["id"] as! Int
-        login = json["login"] as! String
-        type = json["type"] as! String
-    }
-    
     enum CodingKeys: String, CodingKey {
         case avatarUrl = "avatar_url"
         case htmlUrl = "html_url"

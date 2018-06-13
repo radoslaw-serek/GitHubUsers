@@ -14,14 +14,15 @@ let userLoginCellIdentifier = "userLogin"
 
 class ViewController: UIViewController {
 
-
+    @IBOutlet weak var errorLabel: UILabel!
+    
     private var userListDataSource: UserListDataSource = GroupingTableViewDataSource()
     
-    private var userService = UserService()
+    private let userService = UserService()
     
     private let userDetailsViewIdentifier = "UserDetails"
     
-    private let manager = NetworkReachabilityManager(host: "www.apple.com")
+    private let manager = NetworkReachabilityManager(host: "www.apple.com")!
     
     private var isGroupingModeOn = true {
         didSet {
@@ -30,9 +31,9 @@ class ViewController: UIViewController {
     }
     
     @IBAction func changeTableViewMode(_ sender: UIBarButtonItem) {
-        let tempArrayOfUsers = userListDataSource.arrayOfUsers
+        let tempArrayOfUsers = userListDataSource.retrieveUsers()
         isGroupingModeOn = !isGroupingModeOn
-        userListDataSource.arrayOfUsers = tempArrayOfUsers
+        userListDataSource.setArrayOfUsers(with: tempArrayOfUsers)
         tableView.dataSource = userListDataSource
         tableView.reloadData()
     }
@@ -45,32 +46,34 @@ class ViewController: UIViewController {
         tableView.dataSource = userListDataSource
         userService.delegate = self
         tableView.register(UINib(nibName: "UserListTableViewCell", bundle: Bundle.main), forCellReuseIdentifier: userLoginCellIdentifier)
+        manageConnectionStatusChanges()
+        manager.startListening()
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        manageConnectionStatusChanges()
+        if !manager.isReachable {
+            presentConnectivityAlert(of: .notReachable)
+        }
         userService.getDataFromUrl()
     }
     
     private func manageConnectionStatusChanges() {
-        manager?.listener = { [weak self] status in
+        manager.listener = { [weak self] status in
             switch status {
             case .notReachable, .unknown:
                 self?.presentConnectivityAlert(of: status)
-            default: return
+            default:
+                self?.errorLabel.isHidden = true
             }
         }
     }
     
     private func presentConnectivityAlert(of status: NetworkReachabilityManager.NetworkReachabilityStatus) {
-        let size = CGRect(x: 0, y: 0, width: view.frame.size.width, height: 30)
-        let label = UILabel(frame: size)
-        label.text = "Connectivity issue. Status: \(status). Please check."
-        label.textAlignment = .center
-        label.textColor = UIColor.white
-        label.backgroundColor = UIColor.red
-        self.view.addSubview(label)
+        errorLabel.text = "Connectivity issue. Status: \(status). Please check."
+        errorLabel.isHidden = false
+        
     }
     
     fileprivate func handleError(_ error: Error) {
@@ -83,9 +86,7 @@ class ViewController: UIViewController {
         if segue.identifier == userDetailsViewIdentifier {
             let userDetailsVC = segue.destination as! UserDetailsViewController
             if let indexPath = sender as? IndexPath {
-                if isGroupingModeOn {
-                    userDetailsVC.user = userListDataSource.retrieveUser(with: indexPath)
-                }
+                userDetailsVC.user = userListDataSource.retrieveUser(with: indexPath)
             }
         }
     }
@@ -100,7 +101,7 @@ extension ViewController: UITableViewDelegate {
 
 extension ViewController: UserServiceDelegate {
     func userService(_ userService: UserService, didRetrieveData userData: [User]) {
-        userListDataSource.arrayOfUsers = userData
+        userListDataSource.setArrayOfUsers(with: userData)
         tableView.reloadData()
     }
     

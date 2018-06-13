@@ -10,28 +10,33 @@ import Foundation
 import UIKit
 
 protocol UserListDataSource: UITableViewDataSource {
-    var arrayOfUsers: [User] {get set}
-    var dictOfUsers: [String:[User]] {get set}
-    var arrayOfKeys: [String] {get set}
+    func setArrayOfUsers(with array: [User])
     func retrieveUser(with indexPath: IndexPath) -> User
+    func retrieveUsers() -> [User]
 }
 
 class GroupingTableViewDataSource: NSObject, UserListDataSource {
     
-    var arrayOfUsers = [User]() {
-        didSet {
-            dictOfUsers = Dictionary(grouping: arrayOfUsers, by: { String($0.login.first!).capitalized })
-            arrayOfKeys = Array(dictOfUsers.keys).sorted()
-        }
+    private var arrayOfUsers = [User]()
+    
+    private var dictOfUsers = Dictionary<String,[User]>()
+    
+    private var arrayOfKeys = [String]()
+
+    func setArrayOfUsers(with array: [User]) {
+        arrayOfUsers = array
+        dictOfUsers = Dictionary(grouping: arrayOfUsers, by: { String($0.login.first!).capitalized })
+        arrayOfKeys = Array(dictOfUsers.keys).sorted()
     }
     
-    var dictOfUsers = Dictionary<String,[User]>()
     
-    var arrayOfKeys = [String]()
-
     func retrieveUser(with indexPath: IndexPath) -> User {
         let key = arrayOfKeys[indexPath.section]
         return dictOfUsers[key]![indexPath.row]
+    }
+    
+    func retrieveUsers() -> [User] {
+        return arrayOfUsers
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
@@ -58,16 +63,20 @@ class GroupingTableViewDataSource: NSObject, UserListDataSource {
 
 class NonGroupingTableViewDataSource: NSObject, UserListDataSource {
     
-    var arrayOfUsers = [User]()
+    private var arrayOfUsers = [User]()
     
-    var dictOfUsers = Dictionary<String,[User]>()
-    
-    var arrayOfKeys = [String]()
+    func setArrayOfUsers(with array: [User]) {
+        arrayOfUsers = array
+    }
     
     func retrieveUser(with indexPath: IndexPath) -> User {
         return arrayOfUsers[indexPath.row]
     }
 
+    func retrieveUsers() -> [User] {
+        return arrayOfUsers
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return arrayOfUsers.count
     }

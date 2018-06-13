@@ -19,16 +19,31 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="dBY-Z0-YeK">
-                                <rect key="frame" x="0.0" y="64" width="375" height="603"/>
+                                <rect key="frame" x="0.0" y="84.5" width="375" height="582.5"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </tableView>
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="0tf-o9-zCQ">
+                                <rect key="frame" x="0.0" y="64" width="375" height="20.5"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rqE-aI-08U">
+                                        <rect key="frame" x="0.0" y="0.0" width="375" height="20.5"/>
+                                        <color key="backgroundColor" red="1" green="0.57637232540000005" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <color key="textColor" red="0.99999600649999998" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                            </stackView>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="dBY-Z0-YeK" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="BXt-OR-U2O"/>
-                            <constraint firstItem="dBY-Z0-YeK" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="C43-C0-8nz"/>
-                            <constraint firstItem="dBY-Z0-YeK" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="PEs-EW-NFb"/>
-                            <constraint firstAttribute="trailing" secondItem="dBY-Z0-YeK" secondAttribute="trailing" id="hX6-Qv-OQr"/>
+                            <constraint firstItem="dBY-Z0-YeK" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="ESe-k1-Bz7"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="0tf-o9-zCQ" secondAttribute="trailing" id="L6X-33-lI4"/>
+                            <constraint firstItem="dBY-Z0-YeK" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="bTF-cY-g8g"/>
+                            <constraint firstItem="0tf-o9-zCQ" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="lYR-X6-wnc"/>
+                            <constraint firstItem="0tf-o9-zCQ" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="ltY-H8-sC7"/>
+                            <constraint firstItem="dBY-Z0-YeK" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="sA2-CJ-xFB"/>
+                            <constraint firstItem="dBY-Z0-YeK" firstAttribute="top" secondItem="0tf-o9-zCQ" secondAttribute="bottom" id="vV7-wU-1Kk"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
@@ -40,6 +55,7 @@
                         </barButtonItem>
                     </navigationItem>
                     <connections>
+                        <outlet property="errorLabel" destination="rqE-aI-08U" id="yHv-z1-TyP"/>
                         <outlet property="tableView" destination="dBY-Z0-YeK" id="MJO-Rh-dj3"/>
                         <segue destination="zQs-lN-8Db" kind="show" identifier="UserDetails" id="hxQ-Vq-kYQ"/>
                     </connections>
